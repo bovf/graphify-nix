@@ -19,6 +19,9 @@
 
     forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f system);
 
+    appsLib = import ./nix/apps {inherit nixpkgs;};
+    shellsLib = import ./nix/shells;
+
     graphifyOverlay = import ./overlays/graphify {};
   in {
     overlays = {
@@ -36,5 +39,16 @@
       inherit (pkgs) datasketch graphify;
       default = pkgs.graphify;
     });
+
+    apps = forAllSystems (system: appsLib.mkApps system);
+
+    devShells = forAllSystems (system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+      apps = appsLib.mkApps system;
+    in
+      shellsLib {
+        inherit pkgs;
+        fmtApp = apps.fmt;
+      });
   };
 }
