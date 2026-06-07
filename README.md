@@ -3,13 +3,13 @@
 Nix flake for `graphifyy` with Badwater's local `.nix` AST extractor.
 
 This repo is package/build logic only. Home Manager integration lives in
-[`badwater-ai`](git@gitlab.dobryops.com:bovf/badwater-ai.git); host choices live
+[`badwater-ai`](git@gitlab.dobryops.com:nix/badwater-ai.git); host choices live
 in `pl-badwater`.
 
 ## Remote
 
 ```text
-git@gitlab.dobryops.com:bovf/graphify-nix.git
+git@gitlab.dobryops.com:nix/graphify-nix.git
 ```
 
 ## Local patch
@@ -40,7 +40,7 @@ Default graphify extras:
 
 ```nix
 inputs.graphify-nix = {
-  url = "git+ssh://git@gitlab.dobryops.com/bovf/graphify-nix.git";
+  url = "git+ssh://git@gitlab.dobryops.com/nix/graphify-nix.git";
   inputs.nixpkgs.follows = "nixpkgs";
 };
 
