@@ -1,0 +1,152 @@
+diff -ru graphifyy-0.8.32-base/graphify/detect.py graphifyy-0.8.32/graphify/detect.py
+--- graphifyy-0.8.32-base/graphify/detect.py	2026-06-05 23:20:16.000000000 +0300
++++ graphifyy-0.8.32/graphify/detect.py	2026-06-07 16:00:07.758528062 +0300
+@@ -25,7 +25,7 @@
+ 
+ _MANIFEST_PATH = "graphify-out/manifest.json"
+ 
+-CODE_EXTENSIONS = {'.py', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.ejs', '.ets', '.go', '.rs', '.java', '.groovy', '.gradle', '.cpp', '.cc', '.cxx', '.c', '.h', '.hpp', '.rb', '.swift', '.kt', '.kts', '.cs', '.scala', '.php', '.lua', '.luau', '.toc', '.zig', '.ps1', '.ex', '.exs', '.m', '.mm', '.jl', '.vue', '.svelte', '.astro', '.dart', '.v', '.sv', '.svh', '.sql', '.r', '.f', '.F', '.f90', '.F90', '.f95', '.F95', '.f03', '.F03', '.f08', '.F08', '.pas', '.pp', '.dpr', '.dpk', '.lpr', '.inc', '.dfm', '.lfm', '.lpk', '.sh', '.bash', '.json', '.tf', '.tfvars', '.hcl', '.dm', '.dme', '.dmi', '.dmm', '.dmf', '.sln', '.csproj', '.fsproj', '.vbproj', '.razor', '.cshtml'}
++CODE_EXTENSIONS = {'.py', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.ejs', '.ets', '.go', '.rs', '.java', '.groovy', '.gradle', '.cpp', '.cc', '.cxx', '.c', '.h', '.hpp', '.rb', '.swift', '.kt', '.kts', '.cs', '.scala', '.php', '.lua', '.luau', '.toc', '.zig', '.ps1', '.ex', '.exs', '.m', '.mm', '.jl', '.vue', '.svelte', '.astro', '.dart', '.v', '.sv', '.svh', '.sql', '.r', '.f', '.F', '.f90', '.F90', '.f95', '.F95', '.f03', '.F03', '.f08', '.F08', '.pas', '.pp', '.dpr', '.dpk', '.lpr', '.inc', '.dfm', '.lfm', '.lpk', '.sh', '.bash', '.json', '.nix', '.tf', '.tfvars', '.hcl', '.dm', '.dme', '.dmi', '.dmm', '.dmf', '.sln', '.csproj', '.fsproj', '.vbproj', '.razor', '.cshtml'}
+ DOC_EXTENSIONS = {'.md', '.mdx', '.qmd', '.txt', '.rst', '.html', '.yaml', '.yml'}
+ PAPER_EXTENSIONS = {'.pdf'}
+ IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'}
+diff -ru graphifyy-0.8.32-base/graphify/extract.py graphifyy-0.8.32/graphify/extract.py
+--- graphifyy-0.8.32-base/graphify/extract.py	2026-06-05 23:19:44.000000000 +0300
++++ graphifyy-0.8.32/graphify/extract.py	2026-06-07 16:00:07.759844469 +0300
+@@ -10704,6 +10704,128 @@
+     return {"nodes": nodes, "edges": edges}
+ 
+ 
++def extract_nix(path: Path) -> dict:
++    """Extract Nix attr bindings, module options/config, imports, and calls."""
++    try:
++        import tree_sitter_nix as tsnix
++        from tree_sitter import Language, Parser
++    except ImportError:
++        return {"nodes": [], "edges": [], "error": "tree_sitter_nix not installed"}
++
++    try:
++        language = Language(tsnix.language())
++        parser = Parser(language)
++        source = path.read_bytes()
++        tree = parser.parse(source)
++        root = tree.root_node
++    except Exception as e:
++        return {"nodes": [], "edges": [], "error": str(e)}
++
++    stem = _file_stem(path)
++    str_path = str(path)
++    nodes: list[dict] = []
++    edges: list[dict] = []
++    seen_ids: set[str] = set()
++    seen_edges: set[tuple[str, str, str]] = set()
++
++    def _edge(src: str, tgt: str, relation: str, line: int) -> None:
++        if not src or not tgt or src == tgt:
++            return
++        key = (src, tgt, relation)
++        if key in seen_edges:
++            return
++        seen_edges.add(key)
++        edges.append({"source": src, "target": tgt, "relation": relation,
++                      "confidence": "EXTRACTED", "source_file": str_path,
++                      "source_location": f"L{line}", "weight": 1.0})
++
++    def _node(nid: str, label: str, line: int) -> None:
++        if nid and nid not in seen_ids:
++            seen_ids.add(nid)
++            nodes.append({"id": nid, "label": label, "file_type": "code",
++                          "source_file": str_path, "source_location": f"L{line}"})
++
++    def _read(node) -> str:
++        return source[node.start_byte:node.end_byte].decode("utf-8", errors="replace")
++
++    def _attrpath(node) -> str:
++        if node is None:
++            return ""
++        if node.type != "attrpath":
++            return _read(node).strip().strip('"')
++        parts: list[str] = []
++        for c in node.named_children:
++            text = _read(c).strip().strip('"')
++            if text:
++                parts.append(text)
++        return ".".join(parts)
++
++    file_nid = _make_id(stem, "_file")
++    _node(file_nid, path.name, 1)
++
++    path_stack: list[str] = []
++    owner_stack: list[str] = [file_nid]
++
++    def _application_callee(node) -> str | None:
++        fn = node.child_by_field_name("function")
++        if fn is None and node.named_children:
++            fn = node.named_children[0]
++        if fn is None:
++            return None
++        if fn.type in ("variable_expression", "select_expression"):
++            return _read(fn).strip()
++        return None
++
++    def _walk(node) -> None:
++        pushed_owner = False
++        pushed_path = False
++
++        if node.type == "binding":
++            children = list(node.named_children)
++            name_node = children[0] if children and children[0].type == "attrpath" else None
++            value_node = next((c for c in children if c.type != "attrpath"), None)
++            if name_node is not None:
++                local = _attrpath(name_node)
++                full = ".".join(path_stack + [local]) if path_stack else local
++                line = node.start_point[0] + 1
++                nid = _make_id(stem, full)
++                _node(nid, full, line)
++                _edge(owner_stack[-1], nid, "contains", line)
++                owner_stack.append(nid)
++                path_stack.append(local)
++                pushed_owner = True
++                pushed_path = True
++
++                if (local == "imports" or full.endswith(".imports")) and value_node is not None and value_node.type == "list_expression":
++                    for item in value_node.named_children:
++                        target = _read(item).strip().strip('"')
++                        if target:
++                            _edge(nid, _make_id(stem, target), "imports", item.start_point[0] + 1)
++
++                if value_node is not None and value_node.type == "apply_expression":
++                    callee = _application_callee(value_node)
++                    if callee == "import" and len(value_node.named_children) > 1:
++                        target = _read(value_node.named_children[1]).strip().strip('"')
++                        if target:
++                            _edge(nid, _make_id(stem, target), "imports", line)
++
++        elif node.type == "apply_expression":
++            callee = _application_callee(node)
++            if callee and callee != "import":
++                _edge(owner_stack[-1], _make_id(stem, callee), "calls", node.start_point[0] + 1)
++
++        for child in node.children:
++            _walk(child)
++
++        if pushed_path:
++            path_stack.pop()
++        if pushed_owner:
++            owner_stack.pop()
++
++    _walk(root)
++    return {"nodes": nodes, "edges": edges}
++
++
+ _DISPATCH: dict[str, Any] = {
+     ".py": extract_python,
+     ".js": extract_js,
+@@ -10772,6 +10894,7 @@
+     ".sh": extract_bash,
+     ".bash": extract_bash,
+     ".json": extract_json,
++    ".nix": extract_nix,
+     ".tf": extract_terraform,
+     ".tfvars": extract_terraform,
+     ".hcl": extract_terraform,
