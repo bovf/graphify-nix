@@ -241,12 +241,12 @@ final: prev: let
 
     base = py.buildPythonApplication rec {
       pname = "graphifyy";
-      version = "0.8.34";
+      version = "0.8.39";
       pyproject = true;
 
       src = prev.fetchPypi {
         inherit pname version;
-        hash = "sha256-bQY7dDE0p6Wt+l5nlswPQQMjj8VJEoVnBjssJlImZ5U=";
+        hash = "sha256-eeIG/SHeCQv3FV8KxGE0V5UpXtyDfpDpvMgslhpjE6c=";
       };
 
       # Local fork: extract_nix and .nix CODE_EXTENSIONS/dispatch.
@@ -255,6 +255,7 @@ final: prev: let
       build-system = [py.setuptools];
 
       pythonRemoveDeps = unpackagedParsers;
+      pythonRelaxDeps = ["tree-sitter-swift"];
 
       dependencies = deps;
 
