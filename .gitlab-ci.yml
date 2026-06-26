@@ -1,0 +1,42 @@
+# yamllint disable rule:line-length rule:document-start
+stages:
+  - mirror
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - when: never
+
+variables:
+  GIT_STRATEGY: clone
+  GIT_DEPTH: "0"
+
+mirror:main:
+  stage: mirror
+  tags:
+    - nix-cache
+  resource_group: main-mirror-push
+  timeout: 30m
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  script:
+    - |
+      set -euo pipefail
+
+      git checkout -B "$CI_DEFAULT_BRANCH" "origin/$CI_DEFAULT_BRANCH"
+
+      mirror_push() {
+        local name="$1"
+        local url="$2"
+
+        if [ -z "$url" ]; then
+          echo "Skipping $name mirror; URL variable is not configured."
+          return 0
+        fi
+
+        echo "Pushing $CI_DEFAULT_BRANCH to $name mirror"
+        git push --force "$url" "$CI_DEFAULT_BRANCH:$CI_DEFAULT_BRANCH"
+      }
+
+      mirror_push github "${GITHUB_MIRROR_URL:-}"
+      mirror_push codeberg "${CODEBERG_MIRROR_URL:-}"
