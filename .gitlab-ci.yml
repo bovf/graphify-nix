@@ -28,19 +28,27 @@ mirror:main:
       git checkout -B "$CI_DEFAULT_BRANCH" "origin/$CI_DEFAULT_BRANCH"
 
       github_url="${GITHUB_MIRROR_URL:-}"
-      if [ -z "$github_url" ]; then
-        : "${GITHUB_TOKEN:?Set GITHUB_TOKEN or GITHUB_MIRROR_URL for mirroring}"
+      if [ -z "$github_url" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
         github_url="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_MIRROR_REPO}.git"
       fi
 
       codeberg_url="${CODEBERG_MIRROR_URL:-}"
-      if [ -z "$codeberg_url" ]; then
-        : "${CODEBERG_TOKEN:?Set CODEBERG_TOKEN or CODEBERG_MIRROR_URL for mirroring}"
+      if [ -z "$codeberg_url" ] && [ -n "${CODEBERG_TOKEN:-}" ]; then
         codeberg_url="https://bovfbovf:${CODEBERG_TOKEN}@codeberg.org/${CODEBERG_MIRROR_REPO}.git"
       fi
 
-      echo "Pushing $CI_DEFAULT_BRANCH to GitHub mirror"
-      git push --force "$github_url" "$CI_DEFAULT_BRANCH:$CI_DEFAULT_BRANCH"
+      mirror_push() {
+        local name="$1"
+        local url="$2"
 
-      echo "Pushing $CI_DEFAULT_BRANCH to Codeberg mirror"
-      git push --force "$codeberg_url" "$CI_DEFAULT_BRANCH:$CI_DEFAULT_BRANCH"
+        if [ -z "$url" ]; then
+          echo "Skipping $name mirror; URL/token variable is not configured."
+          return 0
+        fi
+
+        echo "Pushing $CI_DEFAULT_BRANCH to $name mirror"
+        git push --force "$url" "$CI_DEFAULT_BRANCH:$CI_DEFAULT_BRANCH"
+      }
+
+      mirror_push github "$github_url"
+      mirror_push codeberg "$codeberg_url"
