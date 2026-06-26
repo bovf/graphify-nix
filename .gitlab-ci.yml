@@ -10,6 +10,8 @@ workflow:
 variables:
   GIT_STRATEGY: clone
   GIT_DEPTH: "0"
+  GITHUB_MIRROR_REPO: bovf/graphify-nix
+  CODEBERG_MIRROR_REPO: bovfbovf/graphify-nix
 
 mirror:main:
   stage: mirror
@@ -25,12 +27,22 @@ mirror:main:
 
       git checkout -B "$CI_DEFAULT_BRANCH" "origin/$CI_DEFAULT_BRANCH"
 
+      github_url="${GITHUB_MIRROR_URL:-}"
+      if [ -z "$github_url" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
+        github_url="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_MIRROR_REPO}.git"
+      fi
+
+      codeberg_url="${CODEBERG_MIRROR_URL:-}"
+      if [ -z "$codeberg_url" ] && [ -n "${CODEBERG_TOKEN:-}" ]; then
+        codeberg_url="https://bovfbovf:${CODEBERG_TOKEN}@codeberg.org/${CODEBERG_MIRROR_REPO}.git"
+      fi
+
       mirror_push() {
         local name="$1"
         local url="$2"
 
         if [ -z "$url" ]; then
-          echo "Skipping $name mirror; URL variable is not configured."
+          echo "Skipping $name mirror; URL/token variable is not configured."
           return 0
         fi
 
@@ -38,5 +50,5 @@ mirror:main:
         git push --force "$url" "$CI_DEFAULT_BRANCH:$CI_DEFAULT_BRANCH"
       }
 
-      mirror_push github "${GITHUB_MIRROR_URL:-}"
-      mirror_push codeberg "${CODEBERG_MIRROR_URL:-}"
+      mirror_push github "$github_url"
+      mirror_push codeberg "$codeberg_url"
