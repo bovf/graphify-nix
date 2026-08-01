@@ -120,13 +120,16 @@ final: prev: let
     hash = "sha256-VzaaN5pj7jMAb/u1fyyH6XmLI+yJpsTlkwpLReTlFNY=";
   };
   # plain `<ver>` tag has parser.c gitignored; -with-generated-files commits it.
-  tree-sitter-swift = mkTSParser {
-    owner = "alex-pinkus";
-    pname = "tree-sitter-swift";
-    version = "0.7.3";
-    tag = "0.7.3-with-generated-files";
-    hash = "sha256-SnWwqk6IRpaNldsraSKwHGtS64LiCndxDksrvLMs1P8=";
-  };
+  tree-sitter-swift =
+    (mkTSParser {
+      owner = "alex-pinkus";
+      pname = "tree-sitter-swift";
+      version = "0.7.3";
+      tag = "0.7.3-with-generated-files";
+      hash = "sha256-SnWwqk6IRpaNldsraSKwHGtS64LiCndxDksrvLMs1P8=";
+    }).overrideAttrs (old: {
+      nativeBuildInputs = (old.nativeBuildInputs or []) ++ [py.pyprojectVersionPatchHook];
+    });
 
   # tree-sitter-nix's PyPI 0.1.0 sdist bundles parser.h — no GitHub fetch needed.
   tree-sitter-nix = py.buildPythonPackage {
@@ -241,12 +244,12 @@ final: prev: let
 
     base = py.buildPythonApplication rec {
       pname = "graphifyy";
-      version = "0.9.20";
+      version = "0.9.31";
       pyproject = true;
 
       src = prev.fetchPypi {
         inherit pname version;
-        hash = "sha256-tL7vIloTcnO2fFqsIwkzMuWPFDctBJVttE0GtDFgBzI=";
+        hash = "sha256-QyvvhwEyzT8bZI4SjN7E0f4dYqsCRrnTTGeXgqqqrS4=";
       };
 
       # Local fork: extract_nix and .nix CODE_EXTENSIONS/dispatch.
