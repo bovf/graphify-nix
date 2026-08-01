@@ -1,6 +1,6 @@
 # graphify-nix
 
-Nix flake for `graphifyy` with Badwater's local `.nix` AST extractor.
+Nix flake for [`graphifyy`](https://github.com/Graphify-Labs/graphify) with Badwater's local `.nix` AST extractor.
 
 This repo is package/build logic only. Home Manager integration lives in
 [`badwater-ai`](git@gitlab.dobryops.com:nix/badwater-ai.git); host choices live

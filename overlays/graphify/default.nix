@@ -5,12 +5,12 @@ final: prev: let
 
   datasketch = py.buildPythonPackage rec {
     pname = "datasketch";
-    version = "1.10.0";
+    version = "2.0.0";
     pyproject = true;
 
     src = prev.fetchPypi {
       inherit pname version;
-      hash = "sha256-0jrqgM5MQHkMp6QHlWWYSL6S7MQ9uAlCvibyHoHSRxQ=";
+      hash = "sha256-4FcOFw9+ZLjW+xzC5M42qfcDbFEAFn5QoHcK3cUFWMI=";
     };
 
     build-system = [py.hatchling py.hatch-vcs];
@@ -110,8 +110,8 @@ final: prev: let
   };
   tree-sitter-php = mkTSParser {
     pname = "tree-sitter-php";
-    version = "0.23.9";
-    hash = "sha256-MBahoes2e3znxZ5Ajz9/RjRuoMEN4yGf8ycT97s95pA=";
+    version = "0.24.1";
+    hash = "sha256-SUoWvPnNpgg5QMxbTw7XfXEoxyOkqnNFPnrMZnoiJH0=";
   };
   tree-sitter-lua = mkTSParser {
     owner = "tree-sitter-grammars";
@@ -120,13 +120,16 @@ final: prev: let
     hash = "sha256-VzaaN5pj7jMAb/u1fyyH6XmLI+yJpsTlkwpLReTlFNY=";
   };
   # plain `<ver>` tag has parser.c gitignored; -with-generated-files commits it.
-  tree-sitter-swift = mkTSParser {
-    owner = "alex-pinkus";
-    pname = "tree-sitter-swift";
-    version = "0.7.3";
-    tag = "0.7.3-with-generated-files";
-    hash = "sha256-SnWwqk6IRpaNldsraSKwHGtS64LiCndxDksrvLMs1P8=";
-  };
+  tree-sitter-swift =
+    (mkTSParser {
+      owner = "alex-pinkus";
+      pname = "tree-sitter-swift";
+      version = "0.7.3";
+      tag = "0.7.3-with-generated-files";
+      hash = "sha256-SnWwqk6IRpaNldsraSKwHGtS64LiCndxDksrvLMs1P8=";
+    }).overrideAttrs (old: {
+      nativeBuildInputs = (old.nativeBuildInputs or []) ++ [py.pyprojectVersionPatchHook];
+    });
 
   # tree-sitter-nix's PyPI 0.1.0 sdist bundles parser.h — no GitHub fetch needed.
   tree-sitter-nix = py.buildPythonPackage {
@@ -235,18 +238,18 @@ final: prev: let
 
   graphifyFor = {extras}: let
     deps = with py;
-      [networkx datasketch rapidfuzz tree-sitter]
+      [networkx rapidfuzz tree-sitter]
       ++ parserDeps
       ++ prev.lib.concatMap (k: extrasMap.${k} or []) extras;
 
     base = py.buildPythonApplication rec {
       pname = "graphifyy";
-      version = "0.9.11";
+      version = "0.9.31";
       pyproject = true;
 
       src = prev.fetchPypi {
         inherit pname version;
-        hash = "sha256-YDYjogjQ9gF4AJc8uBK0Et9OyONqxoNf1gv7YPKmg/A=";
+        hash = "sha256-QyvvhwEyzT8bZI4SjN7E0f4dYqsCRrnTTGeXgqqqrS4=";
       };
 
       # Local fork: extract_nix and .nix CODE_EXTENSIONS/dispatch.
@@ -264,7 +267,7 @@ final: prev: let
 
       meta = {
         description = "AI coding assistant skill — turns any folder of code/docs into a queryable knowledge graph";
-        homepage = "https://github.com/safishamsi/graphify";
+        homepage = "https://github.com/Graphify-Labs/graphify";
         mainProgram = "graphify";
         license = prev.lib.licenses.mit;
         platforms = prev.lib.platforms.unix;
