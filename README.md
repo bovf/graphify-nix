@@ -60,7 +60,7 @@ badwater.ai.graphify.package = pkgs.graphify;
 ```bash
 nix run .#fmt           # auto-format Nix files with Alejandra
 nix run .#fmt -- --check
-nix run .#update        # update flake + graphifyy version/hash, then build
+nix run .#update        # update flake + owned package pins, then build
 nix develop             # installs staged-file Alejandra pre-commit hook
 ```
 
@@ -72,5 +72,6 @@ If upstream graphify changes around file detection or extract dispatch,
 
 ```bash
 nix build .#graphify --no-link
-graphify --version
+nix run .#graphify -- --version
+nix flake check
 ```
