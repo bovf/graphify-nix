@@ -105,14 +105,21 @@ final: prev: let
   };
   tree-sitter-scala = mkTSParser {
     pname = "tree-sitter-scala";
-    version = "0.26.0";
-    hash = "sha256-CnTcQFqYp60rGkLVLRHokUwBenqtWV4hw8boFYNRkbw=";
+    version = "0.26.2";
+    hash = "sha256-PRyNcsiGeGfKtHvbLaGtiog/P8QEs117rqoBZZOXbeE=";
   };
-  tree-sitter-php = mkTSParser {
-    pname = "tree-sitter-php";
-    version = "0.24.1";
-    hash = "sha256-SUoWvPnNpgg5QMxbTw7XfXEoxyOkqnNFPnrMZnoiJH0=";
-  };
+  tree-sitter-php =
+    (mkTSParser {
+      pname = "tree-sitter-php";
+      version = "0.24.2";
+      hash = "sha256-jI7yzcoHS/tNxUqJI4aD1rdEZV3jMn1GZD0J+81Dyf0=";
+    }).overrideAttrs (old: {
+      postPatch =
+        (old.postPatch or "")
+        + ''
+          substituteInPlace pyproject.toml --replace-fail 'license = "LICENSE"' 'license = "MIT"'
+        '';
+    });
   tree-sitter-lua = mkTSParser {
     owner = "tree-sitter-grammars";
     pname = "tree-sitter-lua";
@@ -132,13 +139,14 @@ final: prev: let
     });
 
   # tree-sitter-nix's PyPI 0.1.0 sdist bundles parser.h — no GitHub fetch needed.
-  tree-sitter-nix = py.buildPythonPackage {
+  tree-sitter-nix = py.buildPythonPackage rec {
     pname = "tree-sitter-nix";
     version = "0.1.0";
     pyproject = true;
 
-    src = prev.fetchurl {
-      url = "https://files.pythonhosted.org/packages/4d/c2/10d8983cfaf9c336befe77bb0ef4e058b05ca2208589288e84cb83691e15/tree_sitter_nix-0.1.0.tar.gz";
+    src = prev.fetchPypi {
+      pname = builtins.replaceStrings ["-"] ["_"] pname;
+      inherit version;
       hash = "sha256-tVH9APu6yS8wD6lB88QbZh8pDBQVWd4PaQ1VCdmsPLA=";
     };
 
@@ -155,13 +163,14 @@ final: prev: let
   };
 
   # tree-sitter-hcl's PyPI 1.2.0 sdist also bundles parser.h.
-  tree-sitter-hcl = py.buildPythonPackage {
+  tree-sitter-hcl = py.buildPythonPackage rec {
     pname = "tree-sitter-hcl";
     version = "1.2.0";
     pyproject = true;
 
-    src = prev.fetchurl {
-      url = "https://files.pythonhosted.org/packages/06/c9/ed79f643b0cec3e123171c09caffb6088a6111025a20fc69112b1468828b/tree_sitter_hcl-1.2.0.tar.gz";
+    src = prev.fetchPypi {
+      pname = builtins.replaceStrings ["-"] ["_"] pname;
+      inherit version;
       hash = "sha256-+Gy3qf1cuT2D4veIrhVVREZMR3VdCRkFBd5WLA1q0d0=";
     };
 
@@ -172,7 +181,7 @@ final: prev: let
     meta = {
       description = "Tree-sitter grammar for HCL / Terraform / OpenTofu / Terragrunt (Python bindings)";
       homepage = "https://github.com/tree-sitter-grammars/tree-sitter-hcl";
-      license = prev.lib.licenses.mit;
+      license = prev.lib.licenses.asl20;
       platforms = prev.lib.platforms.unix;
     };
   };
@@ -202,7 +211,7 @@ final: prev: let
     ];
 
   extrasMap = {
-    mcp = with py; [mcp];
+    mcp = with py; [mcp starlette];
     neo4j = with py; [neo4j];
     pdf = with py; [pypdf markdownify];
     watch = with py; [watchdog];
@@ -221,8 +230,8 @@ final: prev: let
     # sql needs tree-sitter-sql; not in nixpkgs.
   };
 
-  # Parsers in graphify's pyproject that extract.py never uses — relax the
-  # buildPythonApplication consistency check by dropping them.
+  # Required parsers not packaged by this overlay; their extractors report the
+  # missing grammar at runtime. Relax the metadata consistency check for them.
   unpackagedParsers = [
     "tree-sitter-go"
     "tree-sitter-zig"
@@ -244,12 +253,12 @@ final: prev: let
 
     base = py.buildPythonApplication rec {
       pname = "graphifyy";
-      version = "0.9.39";
+      version = "0.9.48";
       pyproject = true;
 
       src = prev.fetchPypi {
         inherit pname version;
-        hash = "sha256-P5HeefWvvM2Jcpe2mOmbpj80zEgA7PpJT4TUzw9Z3FU=";
+        hash = "sha256-FOqsg4BIZpQMyzRJHKaatisrUeNG+INWxSEaPYzV5B4=";
       };
 
       # Local fork: extract_nix and .nix CODE_EXTENSIONS/dispatch.
@@ -269,7 +278,7 @@ final: prev: let
         description = "AI coding assistant skill — turns any folder of code/docs into a queryable knowledge graph";
         homepage = "https://github.com/Graphify-Labs/graphify";
         mainProgram = "graphify";
-        license = prev.lib.licenses.mit;
+        license = prev.lib.licenses.asl20;
         platforms = prev.lib.platforms.unix;
       };
     };
