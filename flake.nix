@@ -51,7 +51,7 @@
         from pathlib import Path
 
         from graphify.build import build_from_json
-        from graphify.detect import FileType, classify_file
+        from graphify.detect import CODE_EXTENSIONS, FileType, classify_file
         from graphify.extract import _DISPATCH, _make_id, extract_nix
         from graphify.validate import validate_extraction
 
@@ -68,6 +68,7 @@
 
         extraction = extract_nix(source)
         assert classify_file(source) == FileType.CODE
+        assert {".nix", ".robot", ".resource"} <= CODE_EXTENSIONS
         assert _DISPATCH[".nix"] is extract_nix
         assert _make_id(str(source)) in {node["id"] for node in extraction["nodes"]}
         assert validate_extraction(extraction) == []
