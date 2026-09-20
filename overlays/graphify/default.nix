@@ -29,6 +29,43 @@ final: prev: let
     };
   };
 
+  # Python >= 3.12 uses the maintained jieba distribution upstream.
+  jieba-py = py.buildPythonPackage rec {
+    pname = "jieba-py";
+    version = "0.46.12";
+    pyproject = true;
+    src = prev.fetchPypi {
+      pname = builtins.replaceStrings ["-"] ["_"] pname;
+      inherit version;
+      hash = "sha256-x0pOz35XnACRX+7v1A5URQwWFt36GEl8sNQlY/fk65c=";
+    };
+    build-system = [py.setuptools];
+    pythonImportsCheck = ["jieba"];
+    meta = {
+      description = "Chinese word segmentation utilities";
+      homepage = "https://github.com/bukun/jieba-py";
+      license = prev.lib.licenses.mit;
+    };
+  };
+
+  # nixpkgs' 1.2.5 is below Graphify's Python >= 3.13 requirement.
+  graspologic-native = py.graspologic-native.overridePythonAttrs (old: rec {
+    pname = "graspologic-native";
+    version = "1.3.1";
+    src = prev.fetchPypi {
+      pname = builtins.replaceStrings ["-"] ["_"] pname;
+      inherit version;
+      hash = "sha256-+mvpwpJQi4qHbUWsmO5VBTTZ4z/PcSmm34qVVzEBvkw=";
+    };
+    cargoDeps = prev.rustPlatform.importCargoLock {
+      lockFile = ./graspologic-native-Cargo.lock;
+    };
+    # The sdist now includes Cargo.lock and a root maturin pyproject.
+    postPatch = "";
+    buildAndTestSubdir = null;
+    dependencies = (old.dependencies or []) ++ [py.numpy py.scipy];
+  });
+
   # PyPI sdists strip src/tree_sitter/parser.h; fetch from GitHub instead.
   mkTSParser = {
     owner ? "tree-sitter",
@@ -215,8 +252,11 @@ final: prev: let
     neo4j = with py; [neo4j];
     pdf = with py; [pypdf markdownify];
     watch = with py; [watchdog];
-    svg = with py; [matplotlib];
-    leiden = with py; [graspologic];
+    svg = with py; [matplotlib pillow];
+    leiden =
+      if prev.lib.versionAtLeast py.python.version "3.13"
+      then [graspologic-native]
+      else [py.graspologic];
     office = with py; [python-docx openpyxl];
     google = with py; [openpyxl];
     video = with py; [faster-whisper yt-dlp];
@@ -225,13 +265,17 @@ final: prev: let
     bedrock = with py; [boto3];
     gemini = with py; [openai tiktoken];
     openai = with py; [openai tiktoken];
-    chinese = with py; [jieba];
+    chinese =
+      if prev.lib.versionAtLeast py.python.version "3.12"
+      then [jieba-py]
+      else [py.jieba];
     terraform = [tree-sitter-hcl];
     # sql needs tree-sitter-sql; not in nixpkgs.
   };
 
-  # Required parsers not packaged by this overlay; their extractors report the
-  # missing grammar at runtime. Relax the metadata consistency check for them.
+  # Parsers not packaged by this overlay; their extractors report the missing
+  # grammar at runtime. Remove mandatory requirements where present (DM is now
+  # an upstream optional extra); this does not implement the missing parsers.
   unpackagedParsers = [
     "tree-sitter-go"
     "tree-sitter-zig"
@@ -247,18 +291,18 @@ final: prev: let
 
   graphifyFor = {extras}: let
     deps = with py;
-      [networkx rapidfuzz tree-sitter]
+      [networkx numpy rapidfuzz tree-sitter]
       ++ parserDeps
       ++ prev.lib.concatMap (k: extrasMap.${k} or []) extras;
 
     base = py.buildPythonApplication rec {
       pname = "graphifyy";
-      version = "0.9.54";
+      version = "0.9.65";
       pyproject = true;
 
       src = prev.fetchPypi {
         inherit pname version;
-        hash = "sha256-ZgA6t3tAu55jlGJzbaoU1oOu6ZNG49QqXaa+KcpTs6o=";
+        hash = "sha256-QJ2WoS6RX8T3a3ppKlSCZx/SaWsjBKAs45283W5cq90=";
       };
 
       # Local fork: extract_nix and .nix CODE_EXTENSIONS/dispatch.

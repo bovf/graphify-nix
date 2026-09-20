@@ -13,12 +13,15 @@
         import os
         import re
         import subprocess
+        import tarfile
         import urllib.request
         from pathlib import Path
 
         pypi_pins = [
             "graphifyy",
             "datasketch",
+            "jieba-py",
+            "graspologic-native",
             "tree-sitter-nix",
             "tree-sitter-hcl",
         ]
@@ -45,14 +48,25 @@
             with urllib.request.urlopen(request) as response:
                 return json.load(response)
 
+        cargo_lock = None
+
         def pypi_pin(pname):
+            global cargo_lock
             metadata = get_json(f"https://pypi.org/pypi/{pname}/json")
             version = metadata["info"]["version"]
             sdists = [item for item in metadata["urls"] if item["packagetype"] == "sdist"]
             if len(sdists) != 1:
                 raise RuntimeError(f"expected one {pname} {version} sdist, found {len(sdists)}")
             digest = bytes.fromhex(sdists[0]["digests"]["sha256"])
-            return version, "sha256-" + base64.b64encode(digest).decode(), None
+            source_hash = "sha256-" + base64.b64encode(digest).decode()
+            if pname == "graspologic-native":
+                prefetched = json.loads(subprocess.check_output(
+                    ["nix", "store", "prefetch-file", "--json", "--expected-hash", source_hash, sdists[0]["url"]],
+                    text=True,
+                ))
+                with tarfile.open(prefetched["storePath"]) as archive:
+                    cargo_lock = archive.extractfile(f"graspologic_native-{version}/Cargo.lock").read()
+            return version, source_hash, None
 
         def github_pin(pname, repo):
             release_tag = get_json(f"https://api.github.com/repos/{repo}/releases/latest")["tag_name"]
@@ -104,9 +118,10 @@
             update_pin(pname, *github_pin(pname, repo))
 
         path.write_text(text)
+        Path("overlays/graphify/graspologic-native-Cargo.lock").write_bytes(cargo_lock)
         PY
 
-        nix build .#graphify .#datasketch ".#checks.${system}.nix-extraction" --no-link
+        nix build .#graphify .#datasketch ".#checks.${system}.nix-extraction" ".#checks.${system}.package-contracts" --no-link
         nix run .#fmt
       '';
     };
