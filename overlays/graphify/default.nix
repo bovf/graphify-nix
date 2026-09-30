@@ -297,16 +297,17 @@ final: prev: let
 
     base = py.buildPythonApplication rec {
       pname = "graphifyy";
-      version = "0.9.65";
+      version = "0.9.72";
       pyproject = true;
 
       src = prev.fetchPypi {
         inherit pname version;
-        hash = "sha256-QJ2WoS6RX8T3a3ppKlSCZx/SaWsjBKAs45283W5cq90=";
+        hash = "sha256-iO1sOB6K47Qsfm5HZUif0uOjcMylMeCOmXo8SWk8YT8=";
       };
 
       # Local fork: extract_nix and .nix CODE_EXTENSIONS/dispatch.
       patches = [./nix-support.patch];
+      patchFlags = ["-p1" "--fuzz=0"];
 
       build-system = [py.setuptools];
 

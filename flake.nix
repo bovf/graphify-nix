@@ -45,6 +45,14 @@
         overlays = [self.overlays.default];
       };
     in {
+      updater-release-selection =
+        pkgs.runCommand "graphify-updater-release-selection" {
+          nativeBuildInputs = [(pkgs.python3.withPackages (ps: [ps.packaging]))];
+        } ''
+          python3 ${./nix/apps/update-pins.py} --self-test
+          touch $out
+        '';
+
       nix-extraction = pkgs.runCommand "graphify-nix-extraction-check" {nativeBuildInputs = [pkgs.graphify];} ''
         cat > check.py <<'PY'
         from copy import deepcopy
@@ -68,7 +76,7 @@
 
         extraction = extract_nix(source)
         assert classify_file(source) == FileType.CODE
-        assert {".nix", ".robot", ".resource"} <= CODE_EXTENSIONS
+        assert {".nix", ".robot", ".resource", ".vb", ".cobol", ".sol", ".erl"} <= CODE_EXTENSIONS
         assert _DISPATCH[".nix"] is extract_nix
         assert _make_id(str(source)) in {node["id"] for node in extraction["nodes"]}
         assert validate_extraction(extraction) == []
