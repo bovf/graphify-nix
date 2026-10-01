@@ -13,7 +13,7 @@ diff --git a/graphify/detect.py b/graphify/detect.py
 diff --git a/graphify/extract.py b/graphify/extract.py
 --- a/graphify/extract.py
 +++ b/graphify/extract.py
-@@ -6604,6 +6604,141 @@
+@@ -6691,6 +6691,141 @@
  # block defined in the corpus (count.index, each.key, self.*, path.module, ...).
  
  
@@ -155,7 +155,7 @@ diff --git a/graphify/extract.py b/graphify/extract.py
  _DISPATCH: dict[str, Any] = {
      ".py": extract_python,
      ".js": extract_js,
-@@ -6697,6 +6832,7 @@
+@@ -6784,6 +6919,7 @@
      ".sh": extract_bash,
      ".bash": extract_bash,
      ".json": extract_json,

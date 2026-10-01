@@ -109,9 +109,9 @@ If upstream changes file detection or extract dispatch, refresh
 extractor and upstream extensions, then rerun the updater. Review `git diff`
 before committing; successful updating alone does not test every extra.
 
-### Release audit (2026-09-30)
+### Release audit (2026-10-01)
 
-Graphify **0.9.65 → 0.9.72**, checked against
+Graphify **0.9.72 → 0.9.73**, checked against
 [PyPI metadata](https://pypi.org/pypi/graphifyy/json).
 All 16 dependency pins and graspologic-native's hash-verified Cargo.lock remain
 unchanged after upstream audit:
@@ -123,22 +123,23 @@ unchanged after upstream audit:
 
 PHP's latest release is **0.25.0**, but Graphify still requires `>=0.23,<0.25`:
 **0.24.2 is the latest compatible release**, not an unaudited hold. The updater
-now reads parser bounds from candidate Graphify metadata instead of blindly
+reads parser bounds from candidate Graphify metadata instead of blindly
 choosing latest. The PHP license correction and Swift version hook/metadata
-relaxation remain. Successful API audits were additionally confirmed through
-public GitHub `releases/latest` redirects after a redundant metadata capture
-hit the anonymous API rate limit; no credentials were used.
+relaxation remain. All authoritative API audits succeeded without credentials.
+Graphify's declared dependency constraints are unchanged.
 
-`nixpkgs-unstable` advanced from `0a3468a402c449992505b6a9fc5b06580141b750`
-(2026-09-18) to `b6c8664de9b6cc07fe5666a29f91884ba81197c4` (2026-09-29).
-Python remains **3.14.7**, tree-sitter **0.25.2**. Default dependencies include
-NumPy 2.5.2, MCP 1.29.0, Starlette 1.3.1, pypdf 6.18.1 and Pillow 12.3.0.
+The full flake-input update leaves `nixpkgs-unstable` unchanged at
+`b6c8664de9b6cc07fe5666a29f91884ba81197c4` (2026-09-29), independently confirmed
+against the upstream branch API. Python remains **3.14.7**, tree-sitter **0.25.2**.
+Default dependencies include NumPy 2.5.2, MCP 1.29.0, Starlette 1.3.1,
+pypdf 6.18.1 and Pillow 12.3.0.
 Chinese and Leiden retain their Python-version-marked selections; NumPy remains
 a core dependency even with `extras = []`.
 
-The Nix patch was refreshed against the new source and now applies with zero
-fuzz. It preserves upstream's new VB.NET, COBOL, Solidity and Erlang detection;
-new upstream optional `vbnet`, `r`, `erlang` and `solidity` parser extras are
+The Nix patch's line positions were refreshed against the new source; it applies
+with zero fuzz and no offsets, without changing extractor logic. It preserves
+upstream's VB.NET, COBOL, Solidity and Erlang detection;
+upstream optional `vbnet`, `r`, `erlang` and `solidity` parser extras are
 **not packaged** by this overlay. Detection does not imply grammar availability.
 
 ## Verification
@@ -153,7 +154,7 @@ nix flake check --all-systems --no-build
 nix flake show --all-systems
 ```
 
-The x86_64-linux checks cover `graphify 0.9.72`, default extras, an empty extras
+The x86_64-linux checks cover `graphify 0.9.73`, default extras, an empty extras
 override, and offline Chinese segmentation/native Leiden clustering. The native
 Leiden dependency also runs its six upstream Python tests. `package-contracts`
 validates installed requirement bounds, Pi skill/reference resources, PDF
@@ -168,12 +169,12 @@ For `badwater-ai`, the overlay/package API, default extras and Python wrapper
 are unchanged. The installed layout remains `lib/python3.14/site-packages`, with
 `graphify/skill-pi.md` and all eight `graphify/skills/pi/references/*.md`;
 datasketch remains a separate output, not injected into `graphify-python`.
-Upstream's Pi skill now writes the scan root via a quoted heredoc; its
-`add-watch.md` reads `.graphify_root` instead of interpolating the scan path.
-The other seven Pi references are unchanged. MCP `get_node`/`get_neighbors`
-retain `label` and now accept `node_id` (also `id` internally), with no required
-`label` in their schemas. Public `extract` and local `extract_nix` signatures
-are unchanged; `extract_python` gains an optional keyword-only `root`.
+The Pi skill and all eight references are byte-identical to 0.9.72, as is the
+MCP server source. MCP `get_node`/`get_neighbors` retain `label` and `node_id`
+(also `id` internally), with no required `label` in their schemas.
+Public `extract`, `extract_python` and local `extract_nix` signatures are
+unchanged. No downstream package, Python path, skill or MCP API migration is
+required for this update.
 When `graphify-nix.inputs.nixpkgs.follows = "nixpkgs"`, the consumer's lock
 selects internal dependency versions instead of this lock;
 rebuild and run extraction checks with that consumer's nixpkgs before rollout.
