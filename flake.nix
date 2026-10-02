@@ -76,7 +76,7 @@
 
         extraction = extract_nix(source)
         assert classify_file(source) == FileType.CODE
-        assert {".nix", ".robot", ".resource", ".vb", ".cobol", ".sol", ".erl"} <= CODE_EXTENSIONS
+        assert {".nix", ".robot", ".resource", ".vb", ".cobol", ".sol", ".erl", ".vh"} <= CODE_EXTENSIONS
         assert _DISPATCH[".nix"] is extract_nix
         assert _make_id(str(source)) in {node["id"] for node in extraction["nodes"]}
         assert validate_extraction(extraction) == []
