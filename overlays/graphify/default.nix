@@ -297,12 +297,12 @@ final: prev: let
 
     base = py.buildPythonApplication rec {
       pname = "graphifyy";
-      version = "0.9.74";
+      version = "0.9.80";
       pyproject = true;
 
       src = prev.fetchPypi {
         inherit pname version;
-        hash = "sha256-nGBEEFlZSEdLC+ZpzSK2Ne2J05iNU055ZQBXMQ8n17M=";
+        hash = "sha256-dVX1QALuJJdpLGYvEwFmwXGDTcmS820Pll40IE6Uewc=";
       };
 
       # Local fork: extract_nix and .nix CODE_EXTENSIONS/dispatch.

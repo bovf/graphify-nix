@@ -110,7 +110,23 @@ extractor and upstream extensions, then rebuild the package and checks without
 repeating the pin update. Review `git diff` before committing; successful updating
 alone does not test every extra.
 
-### Release audit (2026-10-02)
+### Release audit (2026-10-07)
+
+Graphify **0.9.74 → 0.9.80**, selected by the existing updater from PyPI.
+All 16 owned dependency pins and graspologic-native's hash-verified Cargo.lock
+remain unchanged after release/hash audit. PHP's latest is now **0.25.1**, still
+outside Graphify's `>=0.23,<0.25` bound; **0.24.2** remains the newest compatible
+release. Nixpkgs advances to `7dd199b0e2993e37b4775ed66b1c291699608c9f`.
+
+The local Nix extractor/patch and default extras need no changes. Graphify,
+datasketch and all three native checks build. The consumer's generated skills,
+references and Python wrapper pass isolated checks; its builtin Pi MCP path
+still exposes ten Graphify tools, including both `get_node` selectors. Upstream
+MCP and skill source bytes changed; the byte-identity observations below belong
+to the historical October 2 audit, not this release. No live graph/model call,
+authenticated service, activation or non-native runtime is claimed.
+
+### Historical release audit (2026-10-02)
 
 Graphify **0.9.73 → 0.9.74**, checked against
 [PyPI metadata](https://pypi.org/pypi/graphifyy/json).
@@ -153,14 +169,14 @@ upstream optional `vbnet`, `r`, `erlang` and `solidity` parser extras are
 ```bash
 # Use the bounded NIX_CONFIG above.
 nix build .#graphify .#datasketch .#checks.x86_64-linux.nix-extraction .#checks.x86_64-linux.package-contracts .#checks.x86_64-linux.updater-release-selection --out-link "$(mktemp -d)/result"
-nix run .#graphify -- --version
+# Run graphify --version only inside a private HOME/filesystem/network sandbox.
 nix run .#fmt -- --check
 nix flake check
 nix flake check --all-systems --no-build
 nix flake show --all-systems
 ```
 
-The x86_64-linux checks cover `graphify 0.9.74`, default extras, an empty extras
+The x86_64-linux checks cover `graphify 0.9.80`, default extras, an empty extras
 override, and offline Chinese segmentation/native Leiden clustering. The native
 Leiden dependency also runs its six upstream Python tests. `package-contracts`
 validates installed requirement bounds, Pi skill/reference resources, PDF
@@ -175,14 +191,17 @@ For `badwater-ai`, the overlay/package API, default extras and Python wrapper
 are unchanged. The installed layout remains `lib/python3.14/site-packages`, with
 `graphify/skill-pi.md` and all eight `graphify/skills/pi/references/*.md`;
 datasketch remains a separate output, not injected into `graphify-python`.
-The Pi skill and all eight references are byte-identical to 0.9.73, as is the
-MCP server source. MCP `get_node`/`get_neighbors` retain `label` and `node_id`
+In the October 2 audit, the Pi skill and all eight references were byte-identical
+to 0.9.73, as was the MCP server source. MCP `get_node`/`get_neighbors` retain `label` and `node_id`
 (also `id` internally), with no required `label` in their schemas.
-Public `extract`, `extract_python` and local `extract_nix` signatures are
-unchanged. Installed parser imports, resources, API signatures and CLI version
-were also checked in a private filesystem/network Bubblewrap sandbox with only
-the read-only Nix store and inert fixtures exposed. CLI startup can refresh stale
-user skills before even `--version`; do not use live HOME for smoke tests.
+In that October 2 audit, public `extract`, `extract_python` and local
+`extract_nix` signatures were unchanged. Installed parser imports, resources,
+API signatures and CLI version were also checked then in a private
+filesystem/network Bubblewrap sandbox with only the read-only Nix store and
+inert fixtures exposed. October 7 coverage is the owner checks and consumer
+skill/MCP checks described above, not a rerun of that standalone smoke test.
+CLI startup can refresh stale user skills before even `--version`; do not use
+live HOME for smoke tests.
 No downstream package, Python path, skill or MCP API migration is required for
 this update.
 When `graphify-nix.inputs.nixpkgs.follows = "nixpkgs"`, the consumer's lock
