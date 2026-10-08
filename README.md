@@ -110,21 +110,21 @@ extractor and upstream extensions, then rebuild the package and checks without
 repeating the pin update. Review `git diff` before committing; successful updating
 alone does not test every extra.
 
-### Release audit (2026-10-07)
+### Release audit (2026-10-08)
 
-Graphify **0.9.74 → 0.9.80**, selected by the existing updater from PyPI.
-All 16 owned dependency pins and graspologic-native's hash-verified Cargo.lock
-remain unchanged after release/hash audit. PHP's latest is now **0.25.1**, still
-outside Graphify's `>=0.23,<0.25` bound; **0.24.2** remains the newest compatible
-release. Nixpkgs advances to `7dd199b0e2993e37b4775ed66b1c291699608c9f`.
+Graphify **0.9.80**, all 16 owned dependency pins and graspologic-native's
+hash-verified Cargo.lock remain unchanged after the full updater and canonical
+release-selector replay. PHP's latest **0.25.1** is outside Graphify's
+`>=0.23,<0.25` bound; **0.24.2** remains the newest compatible release.
+Nixpkgs remains at the audited `7dd199b0e2993e37b4775ed66b1c291699608c9f`.
 
-The local Nix extractor/patch and default extras need no changes. Graphify,
-datasketch and all three native checks build. The consumer's generated skills,
-references and Python wrapper pass isolated checks; its builtin Pi MCP path
-still exposes ten Graphify tools, including both `get_node` selectors. Upstream
-MCP and skill source bytes changed; the byte-identity observations below belong
-to the historical October 2 audit, not this release. No live graph/model call,
-authenticated service, activation or non-native runtime is claimed.
+The extractor/patch, extras, Python wrapper and package contracts are unchanged.
+Graphify, datasketch and all three native checks build. A fresh private
+HOME/filesystem/network smoke check imports all 18 installed parser modules,
+records the three public extraction signatures, checks the eight Pi references,
+extracts an inert Nix fixture and runs `graphify --version`. This is not a full
+parser-behavior audit, semantic/model call, activation or non-native runtime test.
+Consumer skill/MCP checks remain required under the consumer's actual follows.
 
 ### Historical release audit (2026-10-02)
 
@@ -198,8 +198,8 @@ In that October 2 audit, public `extract`, `extract_python` and local
 `extract_nix` signatures were unchanged. Installed parser imports, resources,
 API signatures and CLI version were also checked then in a private
 filesystem/network Bubblewrap sandbox with only the read-only Nix store and
-inert fixtures exposed. October 7 coverage is the owner checks and consumer
-skill/MCP checks described above, not a rerun of that standalone smoke test.
+inert fixtures exposed. October 7 did not repeat that standalone smoke test. The October 8 check
+above is a fresh, separately scoped installed import/resource/signature/CLI check.
 CLI startup can refresh stale user skills before even `--version`; do not use
 live HOME for smoke tests.
 No downstream package, Python path, skill or MCP API migration is required for
