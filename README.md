@@ -110,7 +110,25 @@ extractor and upstream extensions, then rebuild the package and checks without
 repeating the pin update. Review `git diff` before committing; successful updating
 alone does not test every extra.
 
-### Release audit (2026-10-08)
+### Release audit (2026-10-14)
+
+Full updater: Graphify **0.9.80 → 0.9.90**; nixpkgs advances to
+`ca1659429c950a11a565b5764e37a1b704e17ec8`. All sixteen other owned pins and
+hash-verified graspologic-native Cargo.lock were checked and stay unchanged.
+PHP 0.25.1 remains outside the candidate's `>=0.23,<0.25` bound; 0.24.2 is latest
+compatible. No parser constraint is weakened to select a newer release.
+
+Upstream moved detection/extraction context, so `nix-support.patch` was regenerated
+against 0.9.90 with the Nix extractor body byte-identical. It applies at exact
+current positions with zero fuzz; no upstream extension is removed. Graphify,
+datasketch and all three checks build. Private filesystem/network smoke checks
+import all eighteen supplied grammars, inspect eight Pi references/public
+signatures, extract inert Nix and run the CLI version. An initial fixture wrongly
+requested unpackaged HTML instead of supplied JSON; only that fixture was fixed.
+No live HOME, credentials, model calls or non-native runtime claim is added.
+Effective consumer-followed integration is checked separately.
+
+### Historical release audit (2026-10-08)
 
 Graphify **0.9.80**, all 16 owned dependency pins and graspologic-native's
 hash-verified Cargo.lock remain unchanged after the full updater and canonical
@@ -176,7 +194,7 @@ nix flake check --all-systems --no-build
 nix flake show --all-systems
 ```
 
-The x86_64-linux checks cover `graphify 0.9.80`, default extras, an empty extras
+The x86_64-linux checks cover `graphify 0.9.90`, default extras, an empty extras
 override, and offline Chinese segmentation/native Leiden clustering. The native
 Leiden dependency also runs its six upstream Python tests. `package-contracts`
 validates installed requirement bounds, Pi skill/reference resources, PDF
