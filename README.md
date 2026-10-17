@@ -110,7 +110,20 @@ extractor and upstream extensions, then rebuild the package and checks without
 repeating the pin update. Review `git diff` before committing; successful updating
 alone does not test every extra.
 
-### Release audit (2026-10-14)
+### Release audit (2026-10-18)
+
+The full updater selects Graphify **0.9.90 → 0.9.92**, Scala parser
+**0.26.2 → 0.26.3**, and nixpkgs
+`f20cd90e28fe0403873f473b29e42662cd86e8c4`. The other15 owned pins and
+graspologic-native Cargo lock are unchanged after authoritative metadata/hash checks.
+PHP0.25.1 is still outside the candidate's `>=0.23,<0.25` bound;0.24.2 remains
+latest compatible. The local Nix extractor/patch, extras and wrapper are unchanged.
+Both packages and all3 checks build. Private smoke imports18 supplied grammars,
+checks8 Pi references/public APIs, extracts inert Nix and runs the CLI. Generated
+Graphify skills and MCP integration also pass with Pi1.3.0 in a private AI-only
+home. No provider calls, real user data, activation or non-native build claim.
+
+### Historical release audit (2026-10-14)
 
 Full updater: Graphify **0.9.80 → 0.9.90**; nixpkgs advances to
 `ca1659429c950a11a565b5764e37a1b704e17ec8`. All sixteen other owned pins and
@@ -194,7 +207,7 @@ nix flake check --all-systems --no-build
 nix flake show --all-systems
 ```
 
-The x86_64-linux checks cover `graphify 0.9.90`, default extras, an empty extras
+The x86_64-linux checks cover `graphify 0.9.92`, default extras, an empty extras
 override, and offline Chinese segmentation/native Leiden clustering. The native
 Leiden dependency also runs its six upstream Python tests. `package-contracts`
 validates installed requirement bounds, Pi skill/reference resources, PDF

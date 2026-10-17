@@ -142,8 +142,8 @@ final: prev: let
   };
   tree-sitter-scala = mkTSParser {
     pname = "tree-sitter-scala";
-    version = "0.26.2";
-    hash = "sha256-PRyNcsiGeGfKtHvbLaGtiog/P8QEs117rqoBZZOXbeE=";
+    version = "0.26.3";
+    hash = "sha256-hTcG41bQqTSSsqtvtXW6wJIEFZJE49HYmYNJJw1wrho=";
   };
   tree-sitter-php =
     (mkTSParser {
@@ -297,12 +297,12 @@ final: prev: let
 
     base = py.buildPythonApplication rec {
       pname = "graphifyy";
-      version = "0.9.90";
+      version = "0.9.92";
       pyproject = true;
 
       src = prev.fetchPypi {
         inherit pname version;
-        hash = "sha256-D5dFpGV4xv8u1Ue9ovqHoYVFh5BGgmNcOH9wAB5/wmY=";
+        hash = "sha256-PX6jygc9LIFdkyRT57QS2+TXp74QnOauCz/wDhIx9UE=";
       };
 
       # Local fork: extract_nix and .nix CODE_EXTENSIONS/dispatch.
