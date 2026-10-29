@@ -1,7 +1,21 @@
 {...}:
 # graphify (github:safishamsi/graphify) — not in nixpkgs, packaged here.
 final: prev: let
-  py = prev.python3.pkgs;
+  # Graphify's svg extra needs Pillow 13 on Python >= 3.11. Keep the
+  # override local to this dependency scope (including matplotlib), not the
+  # consumer's Python packages. Retire when nixpkgs supplies Pillow >= 13.
+  py = prev.python3.pkgs.overrideScope (finalPy: prevPy: {
+    pillow = prevPy.pillow.overridePythonAttrs (old: rec {
+      pname = "pillow";
+      version = "13.0.0";
+      src = prev.fetchFromGitHub {
+        owner = "python-pillow";
+        repo = "Pillow";
+        tag = version;
+        hash = "sha256-7FHwvgfT40qiHmvcJFZN/FlOECE0YiqOLBEYCMugk+4=";
+      };
+    });
+  });
 
   datasketch = py.buildPythonPackage rec {
     pname = "datasketch";
@@ -291,18 +305,18 @@ final: prev: let
 
   graphifyFor = {extras}: let
     deps = with py;
-      [networkx numpy rapidfuzz tree-sitter]
+      [networkx numpy rapidfuzz pyyaml tree-sitter]
       ++ parserDeps
       ++ prev.lib.concatMap (k: extrasMap.${k} or []) extras;
 
     base = py.buildPythonApplication rec {
       pname = "graphifyy";
-      version = "0.9.92";
+      version = "0.9.97";
       pyproject = true;
 
       src = prev.fetchPypi {
         inherit pname version;
-        hash = "sha256-PX6jygc9LIFdkyRT57QS2+TXp74QnOauCz/wDhIx9UE=";
+        hash = "sha256-ViqQB8qpZBnzPbygB2RzdLaYa95IYCG3R14lZtnFkE8=";
       };
 
       # Local fork: extract_nix and .nix CODE_EXTENSIONS/dispatch.

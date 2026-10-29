@@ -34,12 +34,27 @@ def get_json(url):
         return json.load(response)
 
 
+def owned_constraints(requirements):
+    # Bounds come from the candidate Graphify, never a stale pin. Pillow's
+    # svg bound is Python-version-marked; inactive branches must not constrain it.
+    constraints = {}
+    for spec in requirements:
+        requirement = Requirement(spec)
+        if requirement.name.startswith("tree-sitter-") or (
+            requirement.name == "pillow"
+            and (requirement.marker is None or requirement.marker.evaluate({"extra": "svg"}))
+        ):
+            constraints[requirement.name] = constraints.get(requirement.name, SpecifierSet()) & requirement.specifier
+    return constraints
+
+
 def main():
     pypi_pins = [
         "graphifyy", "datasketch", "jieba-py", "graspologic-native",
         "tree-sitter-nix", "tree-sitter-hcl",
     ]
     github_pins = {
+        "pillow": "python-pillow/Pillow",
         "tree-sitter-typescript": "tree-sitter/tree-sitter-typescript",
         "tree-sitter-java": "tree-sitter/tree-sitter-java",
         "tree-sitter-groovy": "amaanq/tree-sitter-groovy",
@@ -53,12 +68,7 @@ def main():
         "tree-sitter-swift": "alex-pinkus/tree-sitter-swift",
     }
     graphify_metadata = get_json("https://pypi.org/pypi/graphifyy/json")
-    # Owned parser bounds come from the candidate Graphify, never from a stale pin.
-    constraints = {}
-    for spec in graphify_metadata["info"]["requires_dist"]:
-        requirement = Requirement(spec)
-        if requirement.name.startswith("tree-sitter-"):
-            constraints[requirement.name] = constraints.get(requirement.name, SpecifierSet()) & requirement.specifier
+    constraints = owned_constraints(graphify_metadata["info"]["requires_dist"])
     cargo_lock = None
 
     def pypi_pin(pname):
@@ -160,6 +170,16 @@ if __name__ == "__main__":
         assert compatible_release(releases, SpecifierSet("<0.25"))["tag_name"] == "v0.24.1"
         releases[0]["prerelease"] = True
         assert compatible_release(releases, SpecifierSet("<0.25")) is None
-        print("constrained release selection: passed")
+        bounds = owned_constraints([
+            'pillow>=13; python_version >= "3.11" and extra == "svg"',
+            'pillow<13; python_version < "3.11" and extra == "svg"',
+            'pillow<1; extra == "unselected-extra"',
+            'tree-sitter-php>=0.23,<0.25',
+        ])
+        assert Version("13.0.0") in bounds["pillow"]
+        assert Version("12.3.0") not in bounds["pillow"]
+        assert Version("0.24.2") in bounds["tree-sitter-php"]
+        assert Version("0.25.1") not in bounds["tree-sitter-php"]
+        print("constrained release selection and marked svg bounds: passed")
     else:
         main()

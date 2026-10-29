@@ -77,17 +77,20 @@ Run from the repository root on an update branch. Bound builds in this shell
 without overwriting existing Nix configuration:
 
 ```bash
-export NIX_CONFIG="${NIX_CONFIG-}"$'\nmax-jobs = 2\ncores = 4'
+export NIX_CONFIG="${NIX_CONFIG-}"$'\nmax-jobs = 1\ncores = 3'
+export PYTHONDONTWRITEBYTECODE=1
 nix run .#fmt           # auto-format Nix files with Alejandra
 nix run .#fmt -- --check
 nix run .#update        # update every flake input + owned pin, build, then format
 nix develop             # installs staged-file Alejandra pre-commit hook
 ```
 
-`nix/apps/update.nix` runs `nix/apps/update-pins.py` for all 17 owned pins:
+`nix/apps/update.nix` runs `nix/apps/update-pins.py` for all 18 owned pins:
 PyPI's current release/sdist metadata for Graphify, datasketch, jieba-py,
 graspologic-native, Nix and HCL; GitHub's stable release metadata for the other
-11 parsers. Parser versions respect the candidate Graphify's declared bounds;
+11 parsers and the Graphify-local Pillow override. Owned dependency versions
+respect the candidate Graphify's declared bounds (including Python-marked svg
+requirements);
 when the latest release is incompatible, the updater selects the newest
 compatible stable release. It verifies source hashes via PyPI SHA-256 or Nix's
 unpacked GitHub prefetch. Swift uses the matching
@@ -110,7 +113,54 @@ extractor and upstream extensions, then rebuild the package and checks without
 repeating the pin update. Review `git diff` before committing; successful updating
 alone does not test every extra.
 
-### Release audit (2026-10-18)
+### Release audit (2026-10-29)
+
+The supported full updater advances Graphify **0.9.92 → 0.9.97** and the sole
+flake input, nixpkgs, to `e62746b0b472753ef019baceab6f1e2e52014980`.
+All sixteen existing owned dependency pins and graspologic-native's bundled
+Cargo.lock remain unchanged after authoritative release/hash checks:
+
+| Source policy | Audited selections |
+| --- | --- |
+| PyPI sdist | datasketch 2.0.0, jieba-py 0.46.12, graspologic-native 1.3.1, tree-sitter-nix 0.1.0, tree-sitter-hcl 1.2.0 |
+| GitHub stable release | tree-sitter-typescript 0.23.2, tree-sitter-java 0.23.5, tree-sitter-groovy 0.1.2, tree-sitter-c 0.24.2, tree-sitter-cpp 0.23.4, tree-sitter-ruby 0.23.1, tree-sitter-kotlin 1.1.0, tree-sitter-scala 0.26.3, tree-sitter-php 0.24.2, tree-sitter-lua 0.5.0 |
+| GitHub generated-source release | tree-sitter-swift 0.7.3 (`0.7.3-with-generated-files`) |
+
+PHP 0.25.1 is excluded by Graphify's `>=0.23,<0.25` bound. Swift's newer PyPI
+0.7.4 is within version bounds, but is not selected under the existing GitHub
+published generated-source release policy; 0.7.3 is not claimed globally latest
+across distribution channels. All eighteen pins also have current PyPI metadata
+audits. The full updater succeeded; a later supplemental raw GitHub JSON capture
+hit the unauthenticated rate limit and is incomplete, not a second complete audit.
+
+Graphify now declares core `pyyaml>=6.0` and its existing svg extra requires
+`pillow>=13.0.0` on Python >= 3.11. Nixpkgs supplies Pillow 12.3.0, so this overlay
+pins **Pillow 13.0.0** in a Graphify-local Python dependency scope, including
+matplotlib. It does not override the consumer's Python/Pillow. The existing
+nixpkgs recipe's native inputs, build hooks and tests are retained unchanged:
+5,627 tests pass, 123 skip and 3 xfail. Retire the local override and its updater
+pin when nixpkgs supplies Pillow >= 13; do not relax the upstream requirement.
+
+Upstream added structural YAML detection/dispatch. The local patch was refreshed
+against the hash-verified 0.9.97 sdist, applies with zero fuzz and no offsets,
+and preserves the Nix extractor body byte-for-byte. The extraction check now
+protects upstream YAML detection/dispatch and structural extraction too. Default
+extras, `graphify-python`, separate datasketch output and missing-parser/platform
+limits are unchanged. Both native packages and all three checks pass, including
+strict requirement validation, synthetic PDF/SVG/PNG, Chinese and Leiden checks.
+
+Private filesystem/network smoke imports all eighteen supplied grammars, checks
+the Pi skill/eight references and public extraction signatures, extracts inert
+Nix, and runs the CLI plus actual MCP stdio initialize/list/stats/node/empty-query
+calls with zero stderr. MCP **2.3.0** from nixpkgs is supported by the upstream
+server's version-aware adapters. Bare upstream MCP is tested using cwd and an
+explicit graph path; `CLAUDE_PROJECT_DIR` handling belongs to the consuming
+wrapper and must be tested there. The Pi skill and extraction-spec reference
+changed upstream; the other seven references and three extraction signatures
+are unchanged from 0.9.92. Other systems evaluate only; no non-native build,
+provider/service call, user data or activation claim is made.
+
+### Historical release audit (2026-10-18)
 
 The full updater selects Graphify **0.9.90 → 0.9.92**, Scala parser
 **0.26.2 → 0.26.3**, and nixpkgs
@@ -207,11 +257,11 @@ nix flake check --all-systems --no-build
 nix flake show --all-systems
 ```
 
-The x86_64-linux checks cover `graphify 0.9.92`, default extras, an empty extras
+The x86_64-linux checks cover `graphify 0.9.97`, default extras, an empty extras
 override, and offline Chinese segmentation/native Leiden clustering. The native
 Leiden dependency also runs its six upstream Python tests. `package-contracts`
 validates installed requirement bounds, Pi skill/reference resources, PDF
-round-tripping, SVG rendering and Terraform extraction. `nix-extraction` covers detection, dispatch,
+round-tripping, SVG rendering, synthetic Pillow PNG round-tripping and Terraform extraction. `nix-extraction` covers detection, dispatch,
 schema validation, contains/imports/calls edges and the public extraction API.
 Other supported systems are evaluated only, not built on Linux. Upstream full
 Graphify/datasketch test suites, semantic/model calls, external services and

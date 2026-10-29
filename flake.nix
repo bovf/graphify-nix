@@ -60,7 +60,7 @@
 
         from graphify.build import build_from_json
         from graphify.detect import CODE_EXTENSIONS, FileType, classify_file
-        from graphify.extract import _DISPATCH, _make_id, extract, extract_nix
+        from graphify.extract import _DISPATCH, _make_id, extract, extract_nix, extract_yaml
         from graphify.validate import validate_extraction
 
         root = Path.cwd()
@@ -76,7 +76,7 @@
 
         extraction = extract_nix(source)
         assert classify_file(source) == FileType.CODE
-        assert {".nix", ".robot", ".resource", ".vb", ".cobol", ".sol", ".erl", ".vh"} <= CODE_EXTENSIONS
+        assert {".nix", ".yaml", ".yml", ".robot", ".resource", ".vb", ".cobol", ".sol", ".erl", ".vh"} <= CODE_EXTENSIONS
         assert _DISPATCH[".nix"] is extract_nix
         assert _make_id(str(source)) in {node["id"] for node in extraction["nodes"]}
         assert validate_extraction(extraction) == []
@@ -87,6 +87,17 @@
         public_extraction = extract([source], root=root, cache_root=root, parallel=False)
         assert public_extraction["nodes"]
         assert validate_extraction(public_extraction) == []
+
+        # Upstream YAML detection/dispatch must survive the local Nix patch.
+        for suffix in [".yaml", ".yml"]:
+            yaml_source = root / f"sample{suffix}"
+            yaml_source.write_text("image:\n  tag: stable\n")
+            assert classify_file(yaml_source) == FileType.CODE
+            assert _DISPATCH[suffix] is extract_yaml
+            yaml_extraction = extract_yaml(yaml_source)
+            assert "error" not in yaml_extraction
+            assert {"image", "tag"} <= {node["label"] for node in yaml_extraction["nodes"]}
+            assert validate_extraction(yaml_extraction) == []
         PY
         graphify-python check.py
         touch $out
@@ -124,6 +135,7 @@
           matplotlib.use("Agg")
           from matplotlib import pyplot
           from pypdf import PdfReader, PdfWriter
+          from PIL import Image
           import graphify.serve
           import markdownify
           import tree_sitter_hcl
@@ -148,6 +160,10 @@
           assert len(PdfReader(pdf).pages) == 1
           pyplot.plot([0, 1], [0, 1])
           pyplot.savefig("smoke.svg")
+          image = BytesIO()
+          Image.new("RGB", (2, 2), "red").save(image, format="PNG")
+          image.seek(0)
+          assert Image.open(image).getpixel((0, 0)) == (255, 0, 0)
           PY
           ${optional}/bin/graphify-python - <<'PY'
           from importlib.metadata import requires, version
