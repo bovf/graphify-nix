@@ -31,6 +31,7 @@ packages.${system}.datasketch
 checks.${system}.nix-extraction
 checks.${system}.package-contracts
 checks.${system}.updater-release-selection
+checks.${system}.review-navigation
 ```
 
 Supported systems: `x86_64-linux`, `aarch64-linux`, `aarch64-darwin`.
@@ -70,6 +71,22 @@ Then `badwater-ai` can consume `pkgs.graphify` via:
 badwater.ai.graphify.enable = true;
 badwater.ai.graphify.package = pkgs.graphify;
 ```
+
+## Senior swarm navigation
+
+`badwater-swarm` (packaged by pi-nix, enabled by badwater-ai) reuses this package;
+Graphify does not gain another orchestrator, agent registry or MCP owner. A
+review may query an existing map for source locations, but must compare its
+`built_at_commit` and dirty-tree state with current source and read that source.
+A stale map is navigation, not verified current architecture. Missing maps fall
+back to source/LSP inspection; review never silently invokes semantic extraction,
+asks for provider keys or installs another Graphify.
+
+`nix build .#checks.x86_64-linux.review-navigation --no-link` runs a synthetic
+source-located query, checks graph bytes/freshness metadata remain unchanged, and
+confirms a missing map is not rebuilt or presented as evidence. It uses no model,
+credentials or production corpus. `save-result`, `reflect`, extraction and update
+are separate mutating operations, not part of the read-only navigation contract.
 
 ## Apps / development
 

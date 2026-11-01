@@ -53,6 +53,36 @@
           touch $out
         '';
 
+      review-navigation = pkgs.runCommand "graphify-review-navigation-check" {nativeBuildInputs = [pkgs.graphify];} ''
+        export HOME="$TMPDIR/home"
+        mkdir -p "$HOME" graphify-out missing
+        graphify-python - <<'PY'
+        import hashlib
+        import json
+        import os
+        from pathlib import Path
+        import subprocess
+
+        graph = Path("graphify-out/graph.json")
+        graph.write_text(json.dumps({
+            "directed": False, "multigraph": False, "built_at_commit": "synthetic-not-current",
+            "nodes": [{"id": "fixture", "label": "fixture authentication", "source_file": "demo.nix", "source_location": "L2"}],
+            "links": [],
+        }))
+        before = hashlib.sha256(graph.read_bytes()).hexdigest()
+        result = subprocess.run(["graphify", "query", "fixture", "--budget", "500"], capture_output=True, text=True, timeout=30)
+        assert result.returncode == 0, result.stderr
+        assert "demo.nix" in result.stdout and "L2" in result.stdout, result.stdout
+        assert hashlib.sha256(graph.read_bytes()).hexdigest() == before
+        assert json.loads(graph.read_text())["built_at_commit"] == "synthetic-not-current"
+        missing = subprocess.run(["graphify", "query", "fixture"], cwd="missing", capture_output=True, text=True, timeout=30)
+        assert not Path("missing/graphify-out/graph.json").exists(), "navigation must not build a missing graph"
+        assert "NODE fixture" not in missing.stdout, "missing map must not fabricate evidence"
+        print("PASS read-only source-located navigation; stale marker preserved; missing graph never rebuilt; no model calls")
+        PY
+        touch $out
+      '';
+
       nix-extraction = pkgs.runCommand "graphify-nix-extraction-check" {nativeBuildInputs = [pkgs.graphify];} ''
         cat > check.py <<'PY'
         from copy import deepcopy
