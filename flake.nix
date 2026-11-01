@@ -53,7 +53,7 @@
           touch $out
         '';
 
-      review-navigation = pkgs.runCommand "graphify-review-navigation-check" {nativeBuildInputs = [pkgs.graphify];} ''
+      badwater-senior-swarm-navigation = pkgs.runCommand "badwater-senior-swarm-navigation-check" {nativeBuildInputs = [pkgs.graphify];} ''
         export HOME="$TMPDIR/home"
         mkdir -p "$HOME" graphify-out missing
         graphify-python - <<'PY'
